@@ -1,9 +1,7 @@
 import run from "aocrunner";
 
 const parseInput = (rawInput: string) => rawInput.split("\n");
-
-// https://news.ycombinator.com/item?id=36459276
-const objectKeys = Object.keys as <T>(obj: T) => Array<keyof T>;
+import { objectKeys } from "../utils/index.js";
 
 const DIGITS_TO_NUMS = {
   one: 1,

@@ -29,3 +29,6 @@
  *     import { myUtil } from '../utils'
  *
  */
+
+// https://news.ycombinator.com/item?id=36459276
+export const objectKeys = Object.keys as <T>(obj: T) => Array<keyof T>;

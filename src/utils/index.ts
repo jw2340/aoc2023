@@ -32,3 +32,8 @@
 
 // https://news.ycombinator.com/item?id=36459276
 export const objectKeys = Object.keys as <T>(obj: T) => Array<keyof T>;
+
+export const isNumber = (char: string): boolean => {
+  const maybeNum = Number(char);
+  return Number.isInteger(maybeNum);
+};

@@ -14,11 +14,13 @@ const part2 = (rawInput: string) => {
   return;
 };
 
+const input = ``;
+
 run({
   part1: {
     tests: [
       // {
-      //   input: ``,
+      //   input,
       //   expected: "",
       // },
     ],
@@ -27,7 +29,7 @@ run({
   part2: {
     tests: [
       // {
-      //   input: ``,
+      //   input,
       //   expected: "",
       // },
     ],

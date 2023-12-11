@@ -37,3 +37,16 @@ export const isNumber = (char: string): boolean => {
   const maybeNum = Number(char);
   return Number.isInteger(maybeNum);
 };
+
+import { promises } from "fs";
+
+export const writeToFile = async (data: string, filePath: string) => {
+  try {
+    // Use the writeFile function from fs.promises to write the string to the file
+    await promises.writeFile(filePath, data);
+
+    console.log("Data has been written to the file successfully!");
+  } catch (err) {
+    console.error("Error writing to file:", err);
+  }
+};

@@ -1,17 +1,5 @@
 import run from "aocrunner";
-
-import { promises } from "fs";
-
-const writeToFile = async (data: string, filePath: string) => {
-  try {
-    // Use the writeFile function from fs.promises to write the string to the file
-    await promises.writeFile(filePath, data);
-
-    console.log("Data has been written to the file successfully!");
-  } catch (err) {
-    console.error("Error writing to file:", err);
-  }
-};
+import { writeToFile } from "../utils/index.js";
 
 const saveFile = (grid: Grid, filePath: string) => {
   let pipe = "";

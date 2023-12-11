@@ -1,32 +1,32 @@
 import run from "aocrunner";
 
-// import { promises } from "fs";
+import { promises } from "fs";
 
-// const writeToFile = async (data: string) => {
-//   const filePath = "./src/day10/input-1.txt";
+const writeToFile = async (data: string, filePath: string) => {
+  try {
+    // Use the writeFile function from fs.promises to write the string to the file
+    await promises.writeFile(filePath, data);
 
-//   try {
-//     // Use the writeFile function from fs.promises to write the string to the file
-//     await promises.writeFile(filePath, data);
+    console.log("Data has been written to the file successfully!");
+  } catch (err) {
+    console.error("Error writing to file:", err);
+  }
+};
 
-//     console.log("Data has been written to the file successfully!");
-//   } catch (err) {
-//     console.error("Error writing to file:", err);
-//   }
-// };
-// let pipe = "";
-// for (const line of grid) {
-//   pipe +=
-//     line
-//       .map((element) => {
-//         if (element.visited === false) {
-//           return ".";
-//         }
-//         return element.val;
-//       })
-//       .join("") + "\n";
-// }
-// writeToFile(pipe);
+const saveFile = (grid: Grid, filePath: string) => {
+  let pipe = "";
+  for (const line of grid) {
+    pipe +=
+      line
+        .map((element) => {
+          return element.val;
+        })
+        .join("") + "\n";
+  }
+  writeToFile(pipe, filePath);
+};
+
+type Grid = { val: string; visited: boolean }[][];
 
 const parseInput = (rawInput: string) => rawInput.split("\n");
 
@@ -214,16 +214,10 @@ const populateGrid = (rawInput: string) => {
 
   grid[snakeY][snakeX].visited = true;
 
-  // Update S - will have two pipes connected
-  // const points = [
-  //   [snakeY + 1, snakeX], // down
-  //   [snakeY - 1, snakeX], // up
-  //   [snakeY, snakeX + 1], // right
-  //   [snakeY, snakeX - 1], // left
-  // ];
-
   // up and down are pipes => |
   if (
+    !oob(grid, snakeY - 1, snakeX) &&
+    !oob(grid, snakeY + 1, snakeX) &&
     grid[snakeY - 1][snakeX].visited === true &&
     grid[snakeY + 1][snakeX].visited === true
   ) {
@@ -231,6 +225,8 @@ const populateGrid = (rawInput: string) => {
   }
   // left and right are pipes => -
   if (
+    !oob(grid, snakeY, snakeX - 1) &&
+    !oob(grid, snakeY, snakeX + 1) &&
     grid[snakeY][snakeX - 1].visited === true &&
     grid[snakeY][snakeX + 1].visited === true
   ) {
@@ -238,6 +234,8 @@ const populateGrid = (rawInput: string) => {
   }
   // down and right are pipes => F
   if (
+    !oob(grid, snakeY + 1, snakeX) &&
+    !oob(grid, snakeY, snakeX + 1) &&
     grid[snakeY + 1][snakeX].visited === true &&
     grid[snakeY][snakeX + 1].visited === true
   ) {
@@ -245,6 +243,8 @@ const populateGrid = (rawInput: string) => {
   }
   // down and left are pipes => J
   if (
+    !oob(grid, snakeY + 1, snakeX) &&
+    !oob(grid, snakeY, snakeX - 1) &&
     grid[snakeY + 1][snakeX].visited === true &&
     grid[snakeY][snakeX - 1].visited === true
   ) {
@@ -252,6 +252,8 @@ const populateGrid = (rawInput: string) => {
   }
   // up and right are pipes => L
   if (
+    !oob(grid, snakeY - 1, snakeX) &&
+    !oob(grid, snakeY, snakeX + 1) &&
     grid[snakeY - 1][snakeX].visited === true &&
     grid[snakeY][snakeX + 1].visited === true
   ) {
@@ -259,34 +261,18 @@ const populateGrid = (rawInput: string) => {
   }
   // up and left are pipes => 7
   if (
+    !oob(grid, snakeY - 1, snakeX) &&
+    !oob(grid, snakeY, snakeX - 1) &&
     grid[snakeY - 1][snakeX].visited === true &&
     grid[snakeY][snakeX - 1].visited === true
   ) {
     grid[snakeY][snakeX].val = "7";
   }
 
-  // console.log({ snakeY, snakeX });
-  // console.log(grid[snakeY][snakeX].val);
-
   return grid;
 };
 
-const createMemo = (grid: { val: string; visited: boolean }[][]) => {
-  const memo: string[][] = [];
-  for (let i = 0; i < grid.length; i++) {
-    memo.push([]);
-    for (let j = 0; j < grid[i].length; j++) {
-      memo[i].push("UNVISITED");
-    }
-  }
-  return memo;
-};
-
-const oob = (
-  grid: { val: string; visited: boolean }[][],
-  i: number,
-  j: number,
-) => {
+const oob = (grid: Grid, i: number, j: number) => {
   return i < 0 || j < 0 || i >= grid.length || j >= grid[0].length;
 };
 
@@ -299,191 +285,84 @@ const getPoints = (i: number, j: number) => {
   ];
 };
 
-const pathExists = (
-  grid: { val: string; visited: boolean }[][],
-  i: number,
-  j: number,
-  memo: string[][],
-): boolean => {
-  // console.log({ i, j, memo: memo[i][j], val: grid[i][j].val });
-  if (oob(grid, i, j)) {
-    // console.log("oob");
-    return false;
-  }
+const bfs = (grid: Grid, i: number, j: number) => {
+  const queue: { i: number; j: number }[] = [];
+  queue.push({ i, j });
+  grid[i][j].val = "O";
 
-  if (i === 0 || j === 0 || i === grid.length - 1 || j === grid[0].length - 1) {
-    // console.log("reached end");
-    return true;
-  }
-  if (memo[i][j] === "NO_PATH_FOUND" || memo[i][j] === "VISITING") {
-    // console.log("memo not valid");
-    return false;
-  }
-
-  memo[i][j] = "VISITING";
-  const points = getPoints(i, j);
-
-  for (let l = 0; l < points.length; l++) {
-    const point = points[l];
-    // console.log({ point });
-
-    // handle current point is pipe
-    if (grid[i][j].visited === true) {
-      if (grid[i][j].val === "|") {
-        if (l === 2 || l == 3) {
-          continue;
-        }
-      }
-      if (grid[i][j].val === "-") {
-        if (l === 0 || l == 1) {
-          continue;
-        }
-      }
-      if (grid[i][j].val === "7") {
-        if (l == 2) {
-          continue;
-        }
-      }
-      if (grid[i][j].val === "F") {
-        if (l == 3) {
-          continue;
-        }
-      }
-      if (grid[i][j].val === "J") {
-        if (l == 2) {
-          continue;
-        }
-      }
-      if (grid[i][j].val === "L") {
-        if (l == 3) {
-          continue;
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (node === undefined) {
+      throw Error("Unreachable");
+    }
+    const points = getPoints(node.i, node.j);
+    for (const point of points) {
+      if (!oob(grid, point[0], point[1])) {
+        const cell = grid[point[0]][point[1]];
+        if (cell.val !== "O" && cell.visited === false) {
+          queue.push({ i: point[0], j: point[1] });
+          cell.val = "O";
         }
       }
     }
-
-    // in between pipes okay
-    // point is pipe and next to another pipe that is valid
-
-    // inner tile will follow inner pipe
-    // outer tile will follow outer pipe
-
-    // handle open vs closed pipe
-
-    if (grid[point[0]][point[1]].visited === true) {
-      // console.log("pipe val");
-      const pipeVal = grid[point[0]][point[1]].val;
-
-      // up or down
-      if (l === 0 || l == 1) {
-        if (pipeVal === "-") {
-          continue;
-        }
-      }
-      // right or left
-      if (l === 2 || l === 3) {
-        if (pipeVal === "|") {
-          continue;
-        }
-      }
-
-      const nextPoints = getPoints(point[0], point[1]);
-
-      for (let k = 0; k < nextPoints.length; k++) {
-        const nextPoint = nextPoints[k];
-        // console.log({ nextPoint });
-
-        if (grid[nextPoint[0]][nextPoint[1]].visited === true) {
-          const nextPipeVal = grid[nextPoint[0]][nextPoint[1]].val;
-          // J L
-          // - -
-          // 7 F
-
-          // below
-          if (k === 0) {
-            if (
-              ["-", "J", "L"].includes(pipeVal) === true &&
-              ["7", "F", "-"].includes(nextPipeVal) === true
-            ) {
-              if (pathExists(grid, point[0], point[1], memo) === true) {
-                return true;
-              }
-            }
-          }
-
-          // above
-          if (k === 1) {
-            if (
-              ["7", "F", "-"].includes(pipeVal) === true &&
-              ["-", "J", "L"].includes(nextPipeVal) === true
-            ) {
-              if (pathExists(grid, point[0], point[1], memo) === true) {
-                return true;
-              }
-            }
-          }
-
-          // 7 | F
-          // J | L
-
-          // right
-          if (k === 2) {
-            if (
-              ["|", "7", "J"].includes(pipeVal) === true &&
-              ["|", "F", "L"].includes(nextPipeVal) === true
-            ) {
-              if (pathExists(grid, point[0], point[1], memo) === true) {
-                return true;
-              }
-            }
-          }
-
-          // left
-          if (k === 3) {
-            if (
-              ["|", "F", "L"].includes(pipeVal) === true &&
-              ["|", "7", "J"].includes(nextPipeVal) === true
-            ) {
-              if (pathExists(grid, point[0], point[1], memo) === true) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    } else {
-      if (pathExists(grid, point[0], point[1], memo) === true) {
-        return true;
-      }
-    }
   }
-
-  // console.log("no path found");
-  memo[i][j] = "NO_PATH_FOUND";
-  return false;
 };
 
-const countTiles = (grid: { val: string; visited: boolean }[][]) => {
-  let sum = 0;
-  // const i = 3;
-  // const j = 3;
+const markGrid = (grid: Grid) => {
+  let count = 0;
+
   for (let i = 0; i < grid.length; i++) {
-    for (let j = 0; j < grid[i].length; j++) {
-      const memo = createMemo(grid);
-      if (grid[i][j].visited === false) {
-        const isPath = pathExists(grid, i, j, memo);
-        console.log({ i, j, isPath });
-        if (isPath === false) {
-          sum++;
+    let numWalls = 0;
+    let currentWall;
+
+    for (let j = 0; j < grid[0].length; j++) {
+      const cell = grid[i][j];
+      if (cell.visited === false && cell.val != "O") {
+        if (numWalls % 2 === 0) {
+          cell.val = "O";
+        } else {
+          cell.val = "*";
+          count++;
+        }
+        // F---7 and L---J => two walls
+        // F--J and L--7 => one wall
+      } else if (cell.visited === true) {
+        if (cell.val === "|") {
+          numWalls += 1;
+          currentWall = "|";
+        } else if (cell.val === "L") {
+          currentWall = "L";
+        } else if (cell.val === "F") {
+          currentWall = "F";
+        } else if (cell.val === "7") {
+          if (currentWall === "F") {
+            numWalls += 2;
+          }
+          if (currentWall === "L") {
+            numWalls += 1;
+          }
+          currentWall = "7";
+        } else if (cell.val === "J") {
+          if (currentWall === "F") {
+            numWalls += 1;
+          }
+          if (currentWall === "L") {
+            numWalls += 2;
+          }
+          currentWall = "J";
         }
       }
     }
   }
-  return sum;
+  return count;
 };
 
 const part2 = (rawInput: string) => {
   const grid = populateGrid(rawInput);
-  return countTiles(grid);
+  bfs(grid, 0, 0);
+  const count = markGrid(grid);
+  // saveFile(grid, "./src/day10/test.txt");
+  return count;
 };
 
 const input1 = `7-F7-
@@ -529,37 +408,52 @@ const input5 = `..........
 .L--JL--J.
 ..........`;
 
+const input6 = `FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L`;
+
 run({
-  // part1: {
-  //   tests: [
-  //     {
-  //       input: input1,
-  //       expected: 8,
-  //     },
-  //   ],
-  //   solution: part1,
-  // },
+  part1: {
+    tests: [
+      {
+        input: input1,
+        expected: 8,
+      },
+    ],
+    solution: part1,
+  },
   part2: {
     tests: [
-      // {
-      //   input: input1,
-      //   expected: 1,
-      // },
-      // {
-      //   input: input2,
-      //   expected: 1,
-      // },
-      // {
-      //   input: input3,
-      //   expected: 4,
-      // },
-      // {
-      //   input: input4,
-      //   expected: 10,
-      // },
+      {
+        input: input1,
+        expected: 1,
+      },
+      {
+        input: input2,
+        expected: 1,
+      },
+      {
+        input: input3,
+        expected: 4,
+      },
+      {
+        input: input4,
+        expected: 8,
+      },
       {
         input: input5,
         expected: 4,
+      },
+      {
+        input: input6,
+        expected: 10,
       },
     ],
     solution: part2,
